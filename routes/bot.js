@@ -87,6 +87,67 @@ router.post('/webhook', async (req, res) => {
   try {
     const update = req.body;
 
+    // Callback query — tasdiqlash/rad etish tugmalari
+    if (update.callback_query) {
+      const ordersRouter = require('./orders');
+      await new Promise((resolve) => {
+        const fakeReq = { body: update, app: { get: () => null } };
+        const fakeRes = { sendStatus: resolve };
+        ordersRouter.handle
+          ? ordersRouter.handle(fakeReq, fakeRes, resolve)
+          : resolve();
+      });
+      // To'g'ridan orders ga yo'naltirish
+      try {
+        const { PrismaClient } = require('@prisma/client');
+        const prisma = new PrismaClient();
+        const { callback_query } = update;
+        const data = callback_query.data;
+        const chatId = callback_query.message.chat.id;
+        const messageId = callback_query.message.message_id;
+
+        const removeButtons = async () => {
+          await fetch(`${TELEGRAM_API}/editMessageReplyMarkup`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: chatId, message_id: messageId, reply_markup: { inline_keyboard: [] } }),
+          });
+        };
+
+        if (data.startsWith('confirm_')) {
+          const orderId = Number(data.replace('confirm_', ''));
+          const order = await prisma.order.update({
+            where: { id: orderId }, data: { status: 'preparing' },
+            include: { items: { include: { product: true } } },
+          });
+          await removeButtons();
+          await sendMessage(chatId, `✅ *Buyurtma #${orderId} tasdiqlandi!*\n👨‍🍳 Tayyorlanmoqda...`);
+          try { await notifyCustomer(order.customerPhone, order.id, 'preparing', order.totalPrice, order.paymentMethod); } catch(e) {}
+
+        } else if (data.startsWith('cancel_')) {
+          const orderId = Number(data.replace('cancel_', ''));
+          const order = await prisma.order.update({
+            where: { id: orderId }, data: { status: 'cancelled' },
+            include: { items: { include: { product: true } } },
+          });
+          for (const item of order.items) {
+            const product = await prisma.product.findUnique({ where: { id: item.productId } });
+            if (product && product.stock !== null) {
+              await prisma.product.update({ where: { id: item.productId }, data: { stock: product.stock + item.quantity, available: true } });
+            }
+          }
+          await removeButtons();
+          await sendMessage(chatId, `❌ *Buyurtma #${orderId} rad etildi*`);
+          try { await notifyCustomer(order.customerPhone, order.id, 'cancelled', order.totalPrice, order.paymentMethod); } catch(e) {}
+        }
+
+        await fetch(`${TELEGRAM_API}/answerCallbackQuery`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ callback_query_id: callback_query.id }),
+        });
+      } catch(e) { console.log('Callback xatolik:', e.message); }
+      return;
+    }
+
     // Contact yuborilganda — DB ga saqlash
     if (update.message?.contact) {
       const chatId = update.message.chat.id;
@@ -193,7 +254,11 @@ router.get('/set-webhook', async (req, res) => {
     const r = await fetch(`${TELEGRAM_API}/setWebhook`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: webhookUrl, drop_pending_updates: true }),
+      body: JSON.stringify({
+        url: webhookUrl,
+        drop_pending_updates: true,
+        allowed_updates: ['message', 'callback_query'],
+      }),
     });
     await fetch(`${TELEGRAM_API}/setMyCommands`, {
       method: 'POST',
