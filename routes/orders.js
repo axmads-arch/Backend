@@ -145,10 +145,11 @@ router.post('/', async (req, res) => {
       { text: '❌ Rad etish', callback_data: `cancel_${order.id}` },
     ]];
 
-    // Yandex Go tugmasi — faqat manzil bo'lsa
+    // Yandex Go deep link — faqat manzil bo'lsa
     if (latitude && longitude) {
+      const yandexGoUrl = `https://3.redirect.appmetrica.yandex.com/route?start-lat=41.3224858&start-lon=69.2091613&end-lat=${latitude}&end-lon=${longitude}&tariff=courier&appId=ru.yandex.taxi&adjusted_creative_id=5168406774`;
       inlineButtons.push([
-        { text: '🚖 Yandex Go — Kuryer chaqirish', url: `https://taxi.yandex.uz/route?end-lat=${latitude}&end-lon=${longitude}&tariff=courier` }
+        { text: '🚖 Yandex Go — Kuryer chaqirish', url: yandexGoUrl }
       ]);
     }
 
