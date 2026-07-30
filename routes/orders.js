@@ -139,12 +139,20 @@ router.post('/', async (req, res) => {
       (cleanComment ? `\n💬 ${cleanComment}` : '') +
       `\n\n📦 *Mahsulotlar:*\n${itemsText}\n\n💰 *Jami: ${totalPrice.toLocaleString()} so'm*`;
 
-    const inlineKeyboard = {
-      inline_keyboard: [[
-        { text: '✅ Tasdiqlash', callback_data: `confirm_${order.id}` },
-        { text: '❌ Rad etish', callback_data: `cancel_${order.id}` },
-      ]]
-    };
+    // Inline tugmalar — tasdiqlash/rad etish + Yandex Go
+    const inlineButtons = [[
+      { text: '✅ Tasdiqlash', callback_data: `confirm_${order.id}` },
+      { text: '❌ Rad etish', callback_data: `cancel_${order.id}` },
+    ]];
+
+    // Yandex Go tugmasi — faqat manzil bo'lsa
+    if (latitude && longitude) {
+      inlineButtons.push([
+        { text: '🚖 Yandex Go — Kuryer chaqirish', url: `https://taxi.yandex.uz/route?end-lat=${latitude}&end-lon=${longitude}&tariff=courier` }
+      ]);
+    }
+
+    const inlineKeyboard = { inline_keyboard: inlineButtons };
 
     if (checkUrl) {
       await sendPhoto(checkUrl, msgText, { reply_markup: inlineKeyboard });
