@@ -139,15 +139,28 @@ router.post('/', async (req, res) => {
       (cleanComment ? `\n💬 ${cleanComment}` : '') +
       `\n\n📦 *Mahsulotlar:*\n${itemsText}\n\n💰 *Jami: ${totalPrice.toLocaleString()} so'm*`;
 
+    // Koordinat yo'q bo'lsa — manzildan topish
+    let finalLat = latitude;
+    let finalLon = longitude;
+    if ((!latitude || !longitude) && address) {
+      try {
+        const geoR = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address + ' Toshkent')}&format=json&limit=1`);
+        const geoD = await geoR.json();
+        if (geoD.length > 0) {
+          finalLat = parseFloat(geoD[0].lat);
+          finalLon = parseFloat(geoD[0].lon);
+        }
+      } catch(e) {}
+    }
+
     // Inline tugmalar — tasdiqlash/rad etish + Yandex Go
     const inlineButtons = [[
       { text: '✅ Tasdiqlash', callback_data: `confirm_${order.id}` },
       { text: '❌ Rad etish', callback_data: `cancel_${order.id}` },
     ]];
 
-    // Yandex Go deep link — faqat manzil bo'lsa
-    if (latitude && longitude) {
-      const yandexGoUrl = `https://3.redirect.appmetrica.yandex.com/route?start-lat=41.3224858&start-lon=69.2091613&end-lat=${latitude}&end-lon=${longitude}&tariff=courier&appId=ru.yandex.taxi&adjusted_creative_id=5168406774`;
+    if (finalLat && finalLon) {
+      const yandexGoUrl = `https://3.redirect.appmetrica.yandex.com/route?start-lat=41.3224858&start-lon=69.2091613&end-lat=${finalLat}&end-lon=${finalLon}&tariff=courier&appId=ru.yandex.taxi&adjusted_creative_id=5168406774`;
       inlineButtons.push([
         { text: '🚖 Yandex Go — Kuryer chaqirish', url: yandexGoUrl }
       ]);
