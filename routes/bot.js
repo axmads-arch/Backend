@@ -226,7 +226,7 @@ router.post('/webhook', async (req, res) => {
 
     if (text === 'ℹ️ Biz haqimizda') {
       await sendMessage(chatId,
-        `ℹ️ *Rahmat Chef*\n\n🍰 Premium shirinliklar va ☕️ ichimliklar\n\n🕒 24/7 xizmatingizda\n📞 ${PHONE}\n📌 [Instagram](${INSTAGRAM})\n🌐 ${SITE_URL}`,
+        `ℹ️ *Rahmat Chef*\n\nHar bir shirinlikda mehr va sifat!\n\n🕒 24/7 xizmatingizda\n📞 ${PHONE}\n📌 [Instagram](${INSTAGRAM})\n🌐 ${SITE_URL}`,
         { reply_markup: MAIN_MENU }
       );
       return;
