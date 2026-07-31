@@ -137,7 +137,8 @@ router.post('/', async (req, res) => {
       `${DELIVERY_LABELS[deliveryType] || deliveryType}\n${PAYMENT_LABELS[paymentMethod] || paymentMethod}\n` +
       (address ? `🏠 ${address}` : '') + locationText + scheduleText +
       (cleanComment ? `\n💬 ${cleanComment}` : '') +
-      `\n\n📦 *Mahsulotlar:*\n${itemsText}\n\n💰 *Jami: ${totalPrice.toLocaleString()} so'm*`;
+      `\n\n📦 *Mahsulotlar:*\n${itemsText}\n\n💰 *Jami: ${totalPrice.toLocaleString()} so'm*\n\n` +
+      `📱 *Yandex Go uchun mijoz raqami:*\n\`${customerPhone}\``;
 
     // Koordinat yo'q bo'lsa — manzildan topish
     let finalLat = latitude;
@@ -165,11 +166,6 @@ router.post('/', async (req, res) => {
         { text: '🚖 Yandex Go — Kuryer chaqirish', url: yandexGoUrl }
       ]);
     }
-
-    // Mijoz telefoni — Yandex Go da kiritish uchun
-    inlineButtons.push([
-      { text: `📞 Mijoz: ${customerPhone}`, callback_data: `phone_${order.id}` }
-    ]);
 
     const inlineKeyboard = { inline_keyboard: inlineButtons };
 
