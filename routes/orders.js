@@ -166,6 +166,11 @@ router.post('/', async (req, res) => {
       ]);
     }
 
+    // Mijoz telefoni — Yandex Go da kiritish uchun
+    inlineButtons.push([
+      { text: `📞 Mijoz: ${customerPhone}`, callback_data: `phone_${order.id}` }
+    ]);
+
     const inlineKeyboard = { inline_keyboard: inlineButtons };
 
     if (checkUrl) {
